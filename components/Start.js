@@ -5,7 +5,9 @@ import {
   Text,
   TextInput,
   ImageBackground,
-  TouchableOpacity
+  TouchableOpacity,
+  Platform,
+  KeyboardAvoidingView
 } from 'react-native';
 
 const colors = ['#090C08', '#474056', '#8A95A5', '#B9C6AE'];
@@ -46,7 +48,14 @@ const Start = ({ navigation }) => {
         >
           <Text style={styles.buttonText}>Start Chatting</Text>
         </TouchableOpacity>
+       
       </View>
+      {Platform.OS === 'android' ? (
+          <KeyboardAvoidingView behavior="height" />
+        ) : null}
+        {Platform.OS === 'ios' ? (
+          <KeyboardAvoidingView behavior="padding" />
+        ) : null}
     </ImageBackground>
   );
 };
