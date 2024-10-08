@@ -1,23 +1,22 @@
 import { useEffect, useState } from 'react';
-import {
-  StyleSheet,
-  View,
-  Platform,
-  KeyboardAvoidingView,
-  TouchableOpacity
-} from 'react-native';
+import { StyleSheet, View, Platform, KeyboardAvoidingView } from 'react-native';
 import { GiftedChat, Bubble } from 'react-native-gifted-chat';
+import {
+  collection,
+  addDoc,
+  onSnapshot,
+  query,
+  orderBy
+} from 'firebase/firestore';
 
-const Chat = ({ route, navigation }) => {
-  const { name, backgroundColor } = route.params;
+const Chat = ({ route, navigation, db }) => {
+  const { name, backgroundColor, userID } = route.params;
   // message state initialization using useState()
   const [messages, setMessages] = useState([]);
 
   // what's called when user sends a message
   const onSend = (newMessages) => {
-    setMessages((previousMessages) =>
-      GiftedChat.append(previousMessages, newMessages)
-    );
+    addDoc(collection(db, 'messages'), newMessages[0]);
   };
 
   const renderBubble = (props) => {
@@ -38,38 +37,36 @@ const Chat = ({ route, navigation }) => {
     );
   };
 
-  // set state with static message to see each element of UI displayed
+  // Fetch messages from database in real time
   useEffect(() => {
-    setMessages([
-      // simulated user message
-      {
-        _id: 1,
-        text: 'Hello Developer',
-        createdAt: new Date(),
-        user: {
-          _id: 2,
-          name: 'React Native',
-          avatar: 'https://placeimg.com/140/140/any'
-        }
-      },
-      // sets static system message
-      {
-        _id: 2,
-        text: 'Welcome to the Chat!',
-        createdAt: new Date(),
-        system: true
-      }
-    ]);
+    navigation.setOptions({ title: name });
+    const q = query(collection(db, 'messages'), orderBy('createdAt', 'desc'));
+    const unsubMessages = onSnapshot(q, (docs) => {
+      let newMessages = [];
+      docs.forEach((doc) => {
+        newMessages.push({
+          _id: doc.id,
+          ...doc.data(),
+          createdAt: new Date(doc.data().createdAt.toMillis())
+        });
+      });
+      setMessages(newMessages);
+    });
+
+    // Clean up code
+    return () => {
+      if (unsubMessages) unsubMessages();
+    };
   }, []);
 
   // displays entered user name from start screen in navigation bar
-  useEffect(() => {
-    navigation.setOptions({ title: name });
-  }, []);
+  // useEffect(() => {
+  //   navigation.setOptions({ title: name });
+  // }, []);
 
   return (
     // pass selected background color from start screen
-    <View style={[styles.container, { backgroundColor }]}>
+    <View style={[styles.container, { backgroundColor: backgroundColor }]}>
       <GiftedChat
         // accessiblity features
         accessible={true}
@@ -80,8 +77,10 @@ const Chat = ({ route, navigation }) => {
         messages={messages}
         renderBubble={renderBubble}
         onSend={(messages) => onSend(messages)}
+        // attach correct user ID and name to message
         user={{
-          _id: 1
+          _id: userID,
+          name: name
         }}
       />
       {/* Stops keyboard from hiding message input field for android */}
@@ -98,7 +97,8 @@ const Chat = ({ route, navigation }) => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1
+    flex: 1,
+    marginBottom: 40
   }
 });
 
