@@ -10,7 +10,7 @@ import {
   KeyboardAvoidingView,
   Alert
 } from 'react-native';
-import { getAuth, signInAnonymously } from "firebase/auth";
+import { getAuth, signInAnonymously } from 'firebase/auth';
 
 const colors = ['#090C08', '#474056', '#8A95A5', '#B9C6AE'];
 
@@ -24,15 +24,19 @@ const Start = ({ navigation }) => {
   // User can sign in anonymously
   const signInUser = () => {
     signInAnonymously(auth)
-      .then(result => {
+      .then((result) => {
         // when logged in navigate to chat screen with 3 route parameters: user's id, user's name and selected bg color
-        navigation.navigate("Chat", {userID: result.user.uid, name: name, backgroundColor: backgroundColor });
-        Alert.alert("Signed in Successfully!");
+        navigation.navigate('Chat', {
+          userID: result.user.uid,
+          name: name,
+          backgroundColor: backgroundColor
+        });
+        Alert.alert('Signed in Successfully!');
       })
       .catch((error) => {
-        Alert.alert("Unable to sign in, try later again.");
-      })
-  }
+        Alert.alert('Unable to sign in, try later again.');
+      });
+  };
 
   return (
     <ImageBackground
@@ -42,6 +46,7 @@ const Start = ({ navigation }) => {
     >
       <Text style={styles.title}>Chit Chat!</Text>
       <View style={styles.container}>
+        {/* <Icon source={require('../img/icon.svg')}></Icon> */}
         <TextInput
           style={styles.textInput}
           value={name}
@@ -56,25 +61,23 @@ const Start = ({ navigation }) => {
             <TouchableOpacity
               key={color}
               style={[styles.chooseColor, { backgroundColor: color }]}
-              onPress={() => setBackgroundColor(color)} //sets background color in chat
+              onPress={() => setBackgroundColor(color)}  //sets background color in chat
             />
           ))}
         </View>
         <TouchableOpacity
           style={styles.button}
-          // onPress={() => navigation.navigate('Chat', { name, backgroundColor })} //navigates to chat
           onPress={signInUser}
         >
           <Text style={styles.buttonText}>Start Chatting</Text>
         </TouchableOpacity>
-       
       </View>
       {Platform.OS === 'android' ? (
-          <KeyboardAvoidingView behavior="height" />
-        ) : null}
-        {Platform.OS === 'ios' ? (
-          <KeyboardAvoidingView behavior="padding" />
-        ) : null}
+        <KeyboardAvoidingView behavior="height" />
+      ) : null}
+      {Platform.OS === 'ios' ? (
+        <KeyboardAvoidingView behavior="padding" />
+      ) : null}
     </ImageBackground>
   );
 };
@@ -128,18 +131,13 @@ const styles = StyleSheet.create({
     marginLeft: 20,
     marginBottom: 10
   },
-  // colorBoxContainer: {
-  //   flexDirection: 'row',
-  //   alignSelf: 'flex-start',
-  //   justifyContent: 'space-between'
-  // },
   chooseColor: {
     width: 42,
     height: 42,
     borderRadius: 21,
     border: 5,
     borderColor: '#FFFFFF',
-    marginRight: 10
+    marginRight: 10,
   },
 
   button: {

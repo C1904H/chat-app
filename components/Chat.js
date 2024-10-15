@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { StyleSheet, View, Platform, KeyboardAvoidingView } from 'react-native';
+import { useState, useEffect } from 'react';
+import { StyleSheet, View, Platform, KeyboardAvoidingView, Alert } from 'react-native';
 import { GiftedChat, Bubble, InputToolbar } from 'react-native-gifted-chat';
 import {
   collection,
@@ -9,17 +9,74 @@ import {
   orderBy
 } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import CustomActions from './CustomActions';
+import MapView from 'react-native-maps';
 
-const Chat = ({ route, navigation, db, isConnected }) => {
-  const { name, backgroundColor, userID } = route.params;
+const Chat = ({ db, storage, route, navigation, isConnected }) => {
+  
   // message state initialization using useState()
   const [messages, setMessages] = useState([]);
+  const { name, backgroundColor, userID } = route.params;
+
+  // Fetch messages from database in real time
+  let unsubMessages;
+
+  useEffect(() => {
+    navigation.setOptions({ title: name });
+
+    if (isConnected === true) {
+      // unregister current onSnapshot() listener to avoid registering multiple listeners when
+      // useEffect code is re-executed.
+      if (unsubMessages) unsubMessages();
+      unsubMessages = null;
+
+      // If connection, fetch data from Firestore Database
+      const q = query(collection(db, "messages"), orderBy("createdAt", "desc"));
+      unsubMessages = onSnapshot(q, (docs) => {
+        let newMessages = [];
+        docs.forEach(doc => {
+          newMessages.push({
+            _id: doc.id,
+            ...doc.data(),
+            createdAt: new Date(doc.data().createdAt.toMillis())
+          })
+        })
+        cacheMessages(newMessages);
+        setMessages(newMessages);
+      });
+    } else loadCachedMessages(); //Fetches data from AsyncStorage if no connection
+
+    // Clean up code
+    return () => {
+      if (unsubMessages) unsubMessages();
+    }
+  }, [isConnected]);
+
+  // function called if isConnected props false in useEffect(), ||[] returns empty array to cachedMessaged if not set yet in AsyncStorage (known as 'logical OR assignment operator')
+  const loadCachedMessages = async () => {
+    const cachedMessages = await AsyncStorage.getItem("messages") || [];
+    setMessages(JSON.parse(cachedMessages));
+  }
+
+  const cacheMessages = async (messagesToCache) => {
+    try {
+      await AsyncStorage.setItem('messages', JSON.stringify(messagesToCache));
+    } catch (error) {
+      Alert.alert('Unable to cache messages');
+    }
+  };
 
   // what's called when user sends a message
   const onSend = (newMessages) => {
-    addDoc(collection(db, 'messages'), newMessages[0]);
+    addDoc(collection(db, "messages"), newMessages[0])
   };
 
+  // Returns InputToolbar if connected, otherwise returns a null
+const renderInputToolbar = (props) => {
+  if(isConnected) return <InputToolbar {...props} />;
+  else return null;
+}; 
+  
   const renderBubble = (props) => {
     return (
       <Bubble
@@ -37,59 +94,40 @@ const Chat = ({ route, navigation, db, isConnected }) => {
       />
     );
   };
-
-  // Returns InputToolbar if connected, otherwise returns a null
-  const renderInputToolbar = (props) => {
-    if (isConnected) return <InputToolbar {...props} />;
-    else return null;
+  
+  // Creates circle button
+  const renderCustomActions = (props) => {
+    return (
+      <CustomActions
+        onSend={onSend}
+        storage={storage} 
+        userID={userID}
+        {...props}
+      />
+    );
   };
 
-  // Fetch messages from database in real time
-  let unsubMessages;
-  useEffect(() => {
-    navigation.setOptions({ title: name });
-
-    if (isConnected === true) {
-      // unregister current onSnapshot() listener to avoid registering multiple listeners when
-      // useEffect code is re-executed.
-      if (unsubMessages) unsubMessages();
-      unsubMessages = null;
-
-      // If connection, fetch data from Firestore Database
-      const q = query(collection(db, 'messages'), orderBy('createdAt', 'desc'));
-      unsubMessages = onSnapshot(q, (docs) => {
-        let newMessages = [];
-        docs.forEach((doc) => {
-          newMessages.push({
-            _id: doc.id,
-            ...doc.data(),
-            createdAt: new Date(doc.data().createdAt.toMillis())
-          });
-        });
-        cacheMessages(newMessages);
-        setMessages(newMessages);
-      });
-    } else loadCachedMessages(); //Fetches data from AsyncStorage if no connection
-
-    // Clean up code
-    return () => {
-      if (unsubMessages) unsubMessages();
-    };
-  }, [isConnected]);
-
-  const cacheMessages = async (messagesToCache) => {
-    try {
-      await AsyncStorage.setItem('messages', JSON.stringify(messagesToCache));
-    } catch (error) {
-      console.log(error.message);
+  // If currentMessage contains location data, return MapView
+  const renderCustomView = (props) => {
+    const { currentMessage } = props;
+    if (currentMessage.location) {
+      return (
+          <MapView
+            style={{ width: 150,
+              height: 100,
+              borderRadius: 13,
+              margin: 3 }}
+            region={{
+              latitude: currentMessage.location.latitude,
+              longitude: currentMessage.location.longitude,
+              latitudeDelta: 0.0922,
+              longitudeDelta: 0.0421,
+            }}
+          />
+      );
     }
-  };
-
-  // function called if isConnected props false in useEffect(), ||[] returns empty array to cachedMessaged if not set yet in AsyncStorage (known as 'logical OR assignment operator')
-  const loadCachedMessages = async () => {
-    const cachedMessages = (await AsyncStorage.getItem('messages')) || [];
-    setMessages(JSON.parse(cachedMessages));
-  };
+    return null;
+  }
 
   return (
     // pass selected background color from start screen
@@ -104,11 +142,13 @@ const Chat = ({ route, navigation, db, isConnected }) => {
         messages={messages}
         renderBubble={renderBubble}
         renderInputToolbar={renderInputToolbar}
-        onSend={(messages) => onSend(messages)}
+        onSend={messages => onSend(messages)}
+        renderActions={renderCustomActions}
+        renderCustomView={renderCustomView}
         // attach correct user ID and name to message
         user={{
           _id: userID,
-          name: name
+          name: name,
         }}
       />
       {/* Stops keyboard from hiding message input field for android */}
