@@ -60,7 +60,7 @@ const Start = ({ navigation }) => {
           {colors.map((color) => (
             <TouchableOpacity
               key={color}
-              style={[styles.chooseColor, { backgroundColor: color }]}
+              style={[styles.chooseColor, { backgroundColor: color }, backgroundColor ==color && styles.selectedColor]}
               onPress={() => setBackgroundColor(color)}  //sets background color in chat
             />
           ))}
@@ -138,6 +138,10 @@ const styles = StyleSheet.create({
     border: 5,
     borderColor: '#FFFFFF',
     marginRight: 10,
+  },
+  selectedColor: {
+    color: '#C0C0C0',
+    borderWidth: 3,
   },
 
   button: {
