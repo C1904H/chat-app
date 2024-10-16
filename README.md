@@ -19,23 +19,23 @@ A chat app for mobile devices using React Native. The app will provide users wit
 
 ## Installation
 
-1. Clone the repository
+**1. Clone the repository**
    ```
    git clone https://github.com/yourusername/chat-app.git
    ```
 
-2. Navigate to project directory
+**2. Navigate to project directory**
    ```
    cd chat-app
    ```
 
-3. Install the required dependencies:
+**3. Install the required dependencies:**
    ```
    npm install
    ```
 
 ## Setup
-1. Ensure correct version of Node installed. 
+**1. Ensure correct version of Node installed**
 - Before installing Expo, ensure suitable version of Node installed. At this time, Expo only supports Node 16.. at max, so if have higher version, downgrade to "16.19.0" by running the following:
 ```
 nvm install 16.19.0
@@ -43,21 +43,21 @@ nvm use 16.19.0
 nvm alias default 16.19.0
 ```
 
-2. Create a Firebase Project
+**2. Create a Firebase Project**
 - Go to the Firebase Console (console.firebase.google.com).
 - Create a new project.
 - Add a Web app to the project and copy the Firebase configuration settings.
 
-3. Set up Firestore and Storage
+**3. Set up Firestore and Storage**
 - In your Firebase console, navigate to Firestore Database and create a new database.
 - Navigate to Storage and set up Firebase Storage.
 
 ## Usage
-1. Run the application
+**1. Run the application**
    ```
    npx expo start
    ```
 
-2. Open the Expo app on your mobile device or emulator
+**2. Open the Expo app on your mobile device or emulator**
 - Scan the QR code displayed in terminal or browser to run the app on your device.
 
